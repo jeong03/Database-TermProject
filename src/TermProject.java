@@ -255,8 +255,290 @@ public class TermProject {
 
     // 동아리 임원
     private static void PresidentOp(Connection conn) {
+        Scanner scanner = new Scanner(System.in);
+        try {
+            // 동아리 목록 가져오기
+            String sql = "SELECT ClubID, ClubName FROM Club";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery();
+
+            // 동아리 목록 출력
+            System.out.println("----- 동아리 목록 -----");
+            while (rs.next()) {
+                int clubID = rs.getInt("ClubID");
+                String clubName = rs.getString("ClubName");
+                System.out.println("동아리 ID: " + clubID + ", 동아리 이름: " + clubName);
+            }
+
+            // 동아리 ID 입력
+            System.out.print("동아리 ID를 입력하세요: ");
+            int clubID = scanner.nextInt();
+            scanner.nextLine();  // 버퍼 비우기
+
+            System.out.print("동아리 패스워드를 입력하세요: ");
+            String password = scanner.nextLine();
+
+            // 동아리 ID와 패스워드 확인
+            String checkSql = "SELECT * FROM Club WHERE ClubID = ? AND Password = ?";
+            PreparedStatement checkStmt = conn.prepareStatement(checkSql);
+            checkStmt.setInt(1, clubID);
+            checkStmt.setString(2, password);
+            ResultSet checkRs = checkStmt.executeQuery();
+
+            if (checkRs.next()) {
+                // 동아리 이름 표시
+                String clubName = checkRs.getString("ClubName");
+                System.out.println(clubName + " 동아리 임원으로 접속했습니다.");
+                presidentMenu(conn, clubID, clubName);  // 동아리 임원 메뉴
+            } else {
+                System.out.println("유효하지 않은 동아리 ID 또는 패스워드입니다.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
+    // 동아리 임원 메뉴
+    private static void presidentMenu(Connection conn, int clubID, String clubName) {
+        Scanner scanner = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("----- " + clubName + " 동아리 임원 메뉴 -----");
+            System.out.println("1. 동아리 목록");
+            System.out.println("2. 동아리 수정");
+            System.out.println("3. 활동 보고서 목록");
+            System.out.println("4. 활동 보고서 작성");
+            System.out.println("5. 부원 관리");
+            System.out.println("6. 종료");
+
+            System.out.print("선택: ");
+            int choice = scanner.nextInt();
+
+            switch (choice) {
+                case 1:
+                    viewClubList(conn);  // 동아리 목록 보기
+                    break;
+                case 2:
+                    modifyClubForPresident(conn, clubID, clubName);  // 동아리 수정
+                    break;
+                case 3:
+                    viewActivityReportList(conn, clubID);  // 활동 보고서 목록
+                    break;
+                case 4:
+                    createActivityReport(conn, clubID);  // 활동 보고서 작성
+                    break;
+                case 5:
+                    manageMembers(conn, clubID);  // 부원 관리
+                    break;
+                case 6:
+                    System.out.println("동아리 임원 메뉴를 종료합니다.");
+                    return;
+                default:
+                    System.out.println("다시 선택해주세요.");
+            }
+        }
+    }
+
+    private static void modifyClubForPresident(Connection conn, int clubID, String clubName) {
+        Scanner scanner = new Scanner(System.in);
+
+        try {
+            // 동아리 ID로만 수정 가능
+            String checkSql = "SELECT * FROM Club WHERE ClubID = ?";
+            PreparedStatement checkStmt = conn.prepareStatement(checkSql);
+            checkStmt.setInt(1, clubID);
+            ResultSet rs = checkStmt.executeQuery();
+
+            if (rs.next()) {
+                System.out.println("동아리 정보 수정");
+
+                System.out.print("동아리 이름: ");
+                String clubNameInput = scanner.nextLine();
+
+                System.out.print("동아리 소개글: ");
+                String introduction = scanner.nextLine();
+
+                System.out.print("지도 교수명: ");
+                String advisor = scanner.nextLine();
+
+                System.out.print("동아리 패스워드: ");
+                String password = scanner.nextLine();
+
+                String updateSql = "UPDATE Club SET ClubName = ?, Introduction = ?, Advisor = ?, Password = ? WHERE ClubID = ?";
+                PreparedStatement pstmt = conn.prepareStatement(updateSql);
+                pstmt.setString(1, clubNameInput);
+                pstmt.setString(2, introduction);
+                pstmt.setString(3, advisor);
+                pstmt.setString(4, password);
+                pstmt.setInt(5, clubID);
+
+                int rowsAffected = pstmt.executeUpdate();
+                if (rowsAffected > 0) {
+                    System.out.println("동아리 수정 완료.");
+                } else {
+                    System.out.println("동아리 수정 실패.");
+                }
+            } else {
+                System.out.println("본인이 속한 동아리만 수정할 수 있습니다.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 활동 보고서 목록 보기 (임원은 자신의 동아리만 볼 수 있음)
+    private static void viewActivityReportList(Connection conn, int clubID) {
+        try {
+            // 동아리 ID로만 활동 보고서 보기
+            String sql = "SELECT * FROM ActivityReport WHERE ClubID = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, clubID);
+            ResultSet rs = pstmt.executeQuery();
+
+            System.out.println("----- 활동 보고서 목록 -----");
+            while (rs.next()) {
+                System.out.println("활동 ID: " + rs.getInt("ActivityID"));
+                System.out.println("활동 일시: " + rs.getString("ActivityDate"));
+                System.out.println("활동 내용: " + rs.getString("ActivityContent"));
+                System.out.println("-------------");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 활동 보고서 작성 (임원은 자신의 동아리만 작성 가능)
+    private static void createActivityReport(Connection conn, int clubID) {
+        Scanner scanner = new Scanner(System.in);
+
+        // 활동 일시 입력
+        System.out.print("활동 일시: ");
+        String date = scanner.nextLine();
+
+        // 활동 내용 입력
+        System.out.print("활동 내용: ");
+        String content = scanner.nextLine();
+
+        try {
+            // ActivityID는 자동 생성되므로, INSERT 시에 포함하지 않습니다.
+            String sql = "INSERT INTO ActivityReport (ClubID, ActivityDate, ActivityContent) VALUES (?, ?, ?)";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, clubID);
+            pstmt.setString(2, date);
+            pstmt.setString(3, content);
+
+            pstmt.executeUpdate();
+            System.out.println("활동 보고서 작성 완료.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    // 부원 관리 메뉴 (임원은 자신의 동아리 부원만 관리)
+    private static void manageMembers(Connection conn, int clubID) {
+        Scanner scanner = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("----- 부원 관리 메뉴 -----");
+            System.out.println("1. 부원 목록 보기");
+            System.out.println("2. 부원 추가");
+            System.out.println("3. 부원 삭제");
+            System.out.println("4. 뒤로가기");
+
+            System.out.print("선택: ");
+            int choice = scanner.nextInt();
+            scanner.nextLine();  // 버퍼 비우기
+
+            switch (choice) {
+                case 1:
+                    viewMemberList(conn, clubID);  // 부원 목록 보기
+                    break;
+                case 2:
+                    addMember(conn, clubID);  // 부원 추가
+                    break;
+                case 3:
+                    removeMember(conn, clubID);  // 부원 삭제
+                    break;
+                case 4:
+                    return;
+                default:
+                    System.out.println("다시 선택해주세요.");
+            }
+        }
+    }
+
+    // 부원 목록 보기 (임원은 자신의 동아리 부원만 보기)
+    private static void viewMemberList(Connection conn, int clubID) {
+        try {
+            String sql = "SELECT * FROM ClubMember WHERE ClubID = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, clubID);
+            ResultSet rs = pstmt.executeQuery();
+
+            System.out.println("----- 부원 목록 -----");
+            while (rs.next()) {
+                System.out.println("학번: " + rs.getString("StudentID"));
+                System.out.println("이름: " + rs.getString("Name"));
+                System.out.println("-------------");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 부원 추가 (임원은 자신의 동아리만 추가 가능)
+    private static void addMember(Connection conn, int clubID) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.print("부원의 학번을 입력하세요: ");
+        String studentID = scanner.nextLine();
+
+        System.out.print("부원의 이름을 입력하세요: ");
+        String name = scanner.nextLine();
+
+        try {
+            String sql = "INSERT INTO ClubMember (ClubID, StudentID, Name) VALUES (?, ?, ?)";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, clubID);
+            pstmt.setString(2, studentID);
+            pstmt.setString(3, name);
+
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("부원 추가 완료.");
+            } else {
+                System.out.println("부원 추가 실패.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 부원 삭제 (임원은 자신의 동아리 부원만 삭제 가능)
+    private static void removeMember(Connection conn, int clubID) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.print("삭제할 부원의 학번을 입력하세요: ");
+        String studentID = scanner.nextLine();
+
+        try {
+            String sql = "DELETE FROM ClubMember WHERE ClubID = ? AND StudentID = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, clubID);
+            pstmt.setString(2, studentID);
+
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("부원 삭제 완료.");
+            } else {
+                System.out.println("부원 삭제 실패.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     // 동아리 부원
     private static void MemberOp(Connection conn) {
