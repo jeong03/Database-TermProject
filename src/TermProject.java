@@ -15,7 +15,7 @@ public class TermProject {
 
             // 역할 선택 메뉴
             while (true) {
-                System.out.println("----- 역할을 선택해주세요 -----");
+                System.out.println("------- 역할 선택 -------");
                 System.out.println("1. 관리자");
                 System.out.println("2. 동아리 임원");
                 System.out.println("3. 동아리 부원");
@@ -25,22 +25,22 @@ public class TermProject {
                 int choice = scanner.nextInt();
 
                 switch (choice) {
-                    case 1:
-                        AdminOp(conn);  // 관리자
+                    case 1: // 관리자
+                        AdminOp(conn);
                         break;
-                    case 2:
-                        PresidentOp(conn);  // 동아리 임원
+                    case 2: // 동아리 임원
+                        PresidentOp(conn);
                         break;
-                    case 3:
-                        MemberOp(conn);  // 동아리 부원
+                    case 3: // 동아리 부원
+                        MemberOp(conn);
                         break;
-                    case 4:
-                        System.out.println("시스템을 종료합니다.");
+                    case 4: // 종료
+                        System.out.println("시스템 종료");
                         conn.close();
                         scanner.close();
-                        System.exit(0);  // 프로그램 종료
+                        System.exit(0);
                     default:
-                        System.out.println("다시 선택해주세요.");
+                        System.out.println("잘못된 선택입니다. 다시 선택해주세요.");
                 }
             }
 
@@ -53,7 +53,7 @@ public class TermProject {
     private static void AdminOp(Connection conn) {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.print("관리자 고유번호를 입력하세요: ");
+        System.out.print("관리자 고유번호 입력: ");
         int adminNo = scanner.nextInt();
 
         // 관리자 고유번호 확인
@@ -79,12 +79,14 @@ public class TermProject {
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
-            System.out.println("----- 관리자 메뉴 -----");
+            System.out.println("------- 관리자 메뉴 -------");
             System.out.println("1. 동아리 목록");
             System.out.println("2. 동아리 생성");
             System.out.println("3. 동아리 수정");
             System.out.println("4. 동아리 삭제");
-            System.out.println("5. 종료");
+            System.out.println("5. 동아리별 활동 보고서 목록");
+            System.out.println("6. 동아리별 부원 목록");
+            System.out.println("7. 종료");
 
             System.out.print("선택: ");
             int choice = scanner.nextInt();
@@ -103,10 +105,16 @@ public class TermProject {
                     deleteClub(conn);  // 동아리 삭제
                     break;
                 case 5:
+                    viewActivityReportList(conn);  // 동아리별 활동 보고서 목록 보기
+                    break;
+                case 6:
+                    viewMemberList(conn);  // 동아리별 부원 목록 보기
+                    break;
+                case 7:
                     System.out.println("관리자 메뉴를 종료합니다.");
                     return;
                 default:
-                    System.out.println("다시 선택해주세요.");
+                    System.out.println("잘못된 선택입니다. 다시 선택해주세요.");
             }
         }
     }
@@ -118,13 +126,13 @@ public class TermProject {
             PreparedStatement pstmt = conn.prepareStatement(sql);
             ResultSet rs = pstmt.executeQuery();
 
-            System.out.println("----- 동아리 목록 -----");
+            System.out.println("------- 동아리 목록 -------");
             while (rs.next()) {
                 System.out.println("동아리 ID: " + rs.getInt("ClubID"));
                 System.out.println("동아리 이름: " + rs.getString("ClubName"));
                 System.out.println("소개글: " + rs.getString("Introduction"));
                 System.out.println("지도 교수: " + rs.getString("Advisor"));
-                System.out.println("-------------");
+                System.out.println("------------------------");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -170,7 +178,7 @@ public class TermProject {
     private static void modifyClub(Connection conn) {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.print("수정할 동아리의 ID를 입력하세요: ");
+        System.out.print("수정할 동아리의 ID를 입력하세요.: ");
         int clubID = scanner.nextInt();
         scanner.nextLine();  // 버퍼 비우기
 
@@ -253,6 +261,56 @@ public class TermProject {
         }
     }
 
+    // 동아리별 활동 보고서 목록 보기
+    private static void viewActivityReportList(Connection conn) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.print("활동 보고서 목록을 조회할 동아리 ID를 입력하세요: ");
+        int clubID = scanner.nextInt();
+
+        try {
+            String sql = "SELECT * FROM ActivityReport WHERE ClubID = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, clubID);
+            ResultSet rs = pstmt.executeQuery();
+
+            System.out.println("----- 활동 보고서 목록 -----");
+            while (rs.next()) {
+                System.out.println("활동 ID: " + rs.getInt("ActivityID"));
+                System.out.println("활동 일시: " + rs.getString("ActivityDate"));
+                System.out.println("활동 내용: " + rs.getString("ActivityContent"));
+                System.out.println("------------------------");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 동아리별 부원 목록 보기
+    private static void viewMemberList(Connection conn) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.print("동아리 ID를 입력하세요: ");
+        int clubID = scanner.nextInt();
+
+        try {
+            String sql = "SELECT * FROM Members WHERE ClubID = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, clubID);
+            ResultSet rs = pstmt.executeQuery();
+
+            System.out.println("----- 부원 목록 -----");
+            while (rs.next()) {
+                System.out.println("학번: " + rs.getString("StudentID"));
+                System.out.println("이름: " + rs.getString("Name"));
+                System.out.println("---------------------");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     // 동아리 임원
     private static void PresidentOp(Connection conn) {
         Scanner scanner = new Scanner(System.in);
@@ -268,14 +326,15 @@ public class TermProject {
                 int clubID = rs.getInt("ClubID");
                 String clubName = rs.getString("ClubName");
                 System.out.println("동아리 ID: " + clubID + ", 동아리 이름: " + clubName);
+                System.out.println("---------------------");
             }
 
             // 동아리 ID 입력
-            System.out.print("동아리 ID를 입력하세요: ");
+            System.out.print("동아리 ID 입력: ");
             int clubID = scanner.nextInt();
             scanner.nextLine();  // 버퍼 비우기
 
-            System.out.print("동아리 패스워드를 입력하세요: ");
+            System.out.print("동아리 패스워드 입력: ");
             String password = scanner.nextLine();
 
             // 동아리 ID와 패스워드 확인
@@ -316,7 +375,7 @@ public class TermProject {
 
             switch (choice) {
                 case 1:
-                    viewClubList(conn);  // 동아리 목록 보기
+                    viewClubList(conn);  // 동아리 목록
                     break;
                 case 2:
                     modifyClubForPresident(conn, clubID, clubName);  // 동아리 수정
@@ -331,10 +390,10 @@ public class TermProject {
                     manageMembers(conn, clubID);  // 부원 관리
                     break;
                 case 6:
-                    System.out.println("동아리 임원 메뉴를 종료합니다.");
+                    System.out.println("동아리 임원 메뉴 종료.");
                     return;
                 default:
-                    System.out.println("다시 선택해주세요.");
+                    System.out.println("잘못된 선택입니다. 다시 선택해주세요.");
             }
         }
     }
@@ -378,18 +437,15 @@ public class TermProject {
                 } else {
                     System.out.println("동아리 수정 실패.");
                 }
-            } else {
-                System.out.println("본인이 속한 동아리만 수정할 수 있습니다.");
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    // 활동 보고서 목록 보기 (임원은 자신의 동아리만 볼 수 있음)
+    // 활동 보고서 목록 보기
     private static void viewActivityReportList(Connection conn, int clubID) {
         try {
-            // 동아리 ID로만 활동 보고서 보기
             String sql = "SELECT * FROM ActivityReport WHERE ClubID = ?";
             PreparedStatement pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, clubID);
@@ -400,27 +456,24 @@ public class TermProject {
                 System.out.println("활동 ID: " + rs.getInt("ActivityID"));
                 System.out.println("활동 일시: " + rs.getString("ActivityDate"));
                 System.out.println("활동 내용: " + rs.getString("ActivityContent"));
-                System.out.println("-------------");
+                System.out.println("-----------------------");
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    // 활동 보고서 작성 (임원은 자신의 동아리만 작성 가능)
+    // 활동 보고서 작성
     private static void createActivityReport(Connection conn, int clubID) {
         Scanner scanner = new Scanner(System.in);
 
-        // 활동 일시 입력
         System.out.print("활동 일시: ");
         String date = scanner.nextLine();
 
-        // 활동 내용 입력
         System.out.print("활동 내용: ");
         String content = scanner.nextLine();
 
         try {
-            // ActivityID는 자동 생성되므로, INSERT 시에 포함하지 않습니다.
             String sql = "INSERT INTO ActivityReport (ClubID, ActivityDate, ActivityContent) VALUES (?, ?, ?)";
             PreparedStatement pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, clubID);
@@ -435,8 +488,7 @@ public class TermProject {
     }
 
 
-
-    // 부원 관리 메뉴 (임원은 자신의 동아리 부원만 관리)
+    // 부원 관리 메뉴
     private static void manageMembers(Connection conn, int clubID) {
         Scanner scanner = new Scanner(System.in);
 
@@ -449,11 +501,11 @@ public class TermProject {
 
             System.out.print("선택: ");
             int choice = scanner.nextInt();
-            scanner.nextLine();  // 버퍼 비우기
+            scanner.nextLine();
 
             switch (choice) {
                 case 1:
-                    viewMemberList(conn, clubID);  // 부원 목록 보기
+                    viewMemberList(conn, clubID);  // 부원 목록
                     break;
                 case 2:
                     addMember(conn, clubID);  // 부원 추가
@@ -469,7 +521,7 @@ public class TermProject {
         }
     }
 
-    // 부원 목록 보기 (임원은 자신의 동아리 부원만 보기)
+    // 부원 목록
     private static void viewMemberList(Connection conn, int clubID) {
         try {
             String sql = "SELECT * FROM ClubMember WHERE ClubID = ?";
@@ -481,7 +533,7 @@ public class TermProject {
             while (rs.next()) {
                 System.out.println("학번: " + rs.getString("StudentID"));
                 System.out.println("이름: " + rs.getString("Name"));
-                System.out.println("-------------");
+                System.out.println("-----------------");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -492,10 +544,10 @@ public class TermProject {
     private static void addMember(Connection conn, int clubID) {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.print("부원의 학번을 입력하세요: ");
+        System.out.print("추가할 부원의 학번: ");
         String studentID = scanner.nextLine();
 
-        System.out.print("부원의 이름을 입력하세요: ");
+        System.out.print("추가할 부원의 이름: ");
         String name = scanner.nextLine();
 
         try {
@@ -516,11 +568,11 @@ public class TermProject {
         }
     }
 
-    // 부원 삭제 (임원은 자신의 동아리 부원만 삭제 가능)
+    // 부원 삭제
     private static void removeMember(Connection conn, int clubID) {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.print("삭제할 부원의 학번을 입력하세요: ");
+        System.out.print("삭제할 부원의 학번: ");
         String studentID = scanner.nextLine();
 
         try {
@@ -542,6 +594,126 @@ public class TermProject {
 
     // 동아리 부원
     private static void MemberOp(Connection conn) {
-        // 동아리 부원 메뉴 구현
+        Scanner scanner = new Scanner(System.in);
+
+        // 학번 (student ID) 입력
+        System.out.print("학번 입력: ");
+        String studentID = scanner.nextLine();
+
+        try {
+            // 학생이 속한 동아리의 ClubID 가져오기
+            String clubQuery = "SELECT ClubID FROM Members WHERE StudentID = ?";
+            PreparedStatement pstmtClub = conn.prepareStatement(clubQuery);
+            pstmtClub.setString(1, studentID);
+            ResultSet rsClub = pstmtClub.executeQuery();
+
+            if (rsClub.next()) {
+                int clubID = rsClub.getInt("ClubID");
+
+                // 동아리 이름 가져오기
+                String clubNameQuery = "SELECT ClubName FROM Club WHERE ClubID = ?";
+                PreparedStatement pstmtClubName = conn.prepareStatement(clubNameQuery);
+                pstmtClubName.setInt(1, clubID);
+                ResultSet rsClubName = pstmtClubName.executeQuery();
+
+                if (rsClubName.next()) {
+                    String clubName = rsClubName.getString("ClubName");
+
+                    System.out.println(clubName+" 동아리의 부원입니다.");
+
+                    // 부원 메뉴 출력
+                    while (true) {
+                        System.out.println("----- 동아리 부원 메뉴 -----");
+                        System.out.println("1. 동아리 목록");
+                        System.out.println("2. 부원 목록");
+                        System.out.println("3. 활동 보고서 목록");
+                        System.out.println("4. 종료");
+                        System.out.print("선택: ");
+                        int choice = scanner.nextInt();
+
+                        switch (choice) {
+                            case 1:
+                                showClubList(conn);  // 동아리 목록
+                                break;
+                            case 2:
+                                showMemberList(conn, clubID);  // 부원 목록
+                                break;
+                            case 3:
+                                showActivityReportList(conn, clubID);  // 활동 보고서 목록 보기
+                                break;
+                            case 4:
+                                System.out.println("시스템 종료.");
+                                return;  // 종료
+                            default:
+                                System.out.println("잘못된 선택입니다. 다시 선택해주세요.");
+                                break;
+                        }
+                    }
+                }
+            } else {
+                System.out.println("소속 동아리를 찾을 수 없습니다.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
+
+    // 동아리 목록
+    private static void showClubList(Connection conn) {
+        try {
+            String sql = "SELECT * FROM Club";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet rs = pstmt.executeQuery();
+
+            System.out.println("----- 동아리 목록 -----");
+            while (rs.next()) {
+                System.out.println("동아리 ID: " + rs.getInt("ClubID"));
+                System.out.println("동아리 이름: " + rs.getString("ClubName"));
+                System.out.println("-------------------");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 부원 목록
+    private static void showMemberList(Connection conn, int clubID) {
+        try {
+            String sql = "SELECT * FROM Members WHERE ClubID = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, clubID);
+            ResultSet rs = pstmt.executeQuery();
+
+            System.out.println("----- 부원 목록 -----");
+            while (rs.next()) {
+                System.out.println("학번: " + rs.getString("StudentID"));
+                System.out.println("이름: " + rs.getString("Name"));  // Changed from 'StudentName' to 'Name'
+                System.out.println("-------------------");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    // 활동 보고서 목록
+    private static void showActivityReportList(Connection conn, int clubID) {
+        try {
+            String sql = "SELECT * FROM ActivityReport WHERE ClubID = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, clubID);
+            ResultSet rs = pstmt.executeQuery();
+
+            System.out.println("----- 활동 보고서 목록 -----");
+            while (rs.next()) {
+                System.out.println("활동 ID: " + rs.getInt("ActivityID"));
+                System.out.println("활동 일시: " + rs.getString("ActivityDate"));
+                System.out.println("활동 내용: " + rs.getString("ActivityContent"));
+                System.out.println("--------------------------");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
