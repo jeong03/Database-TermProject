@@ -627,7 +627,7 @@ public class TermProject {
 
                     // 부원 메뉴 출력
                     while (true) {
-                        System.out.println("\n----- 동아리 부원 메뉴 -----");
+                        System.out.println("\n------- 동아리 부원 메뉴 -------");
                         System.out.println("1. 동아리 목록");
                         System.out.println("2. 부원 목록");
                         System.out.println("3. 활동 보고서 목록");
